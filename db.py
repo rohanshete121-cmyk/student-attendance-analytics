@@ -8,13 +8,15 @@ def get_db_connection(use_database=True):
     Uses DictCursor so results can be accessed like dictionaries (e.g. row['name']).
     """
     connection_params = {
-        'host': Config.DB_HOST,
-        'port': Config.DB_PORT,
-        'user': Config.DB_USER,
-        'password': Config.DB_PASSWORD,
-        'cursorclass': DictCursor,
-        'autocommit': False,
-        'charset': 'utf8mb4'
+    'host': Config.DB_HOST,
+    'port': Config.DB_PORT,
+    'user': Config.DB_USER,
+    'password': Config.DB_PASSWORD,
+    'cursorclass': DictCursor,
+    'autocommit': False,
+    'charset': 'utf8mb4',
+    'ssl': {}
+    
     }
     
     if use_database:
