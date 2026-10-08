@@ -1,1 +1,37 @@
+{% extends "base.html" %}
 
+{% block content %}
+<div class="container mt-4">
+    <h2>High Attendance Students</h2>
+    <p class="text-muted">Students with attendance of 75% or above.</p>
+
+    {% if analytics.students_high %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Roll Number</th>
+                    <th>Student Name</th>
+                    <th>Class</th>
+                    <th>Attendance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in analytics.students_high %}
+                <tr>
+                    <td>{{ student.roll_number }}</td>
+                    <td>{{ student.student_name }}</td>
+                    <td>{{ student.class_name }}</td>
+                    <td><strong>{{ student.percentage }}%</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No students currently have attendance of 75% or above.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
