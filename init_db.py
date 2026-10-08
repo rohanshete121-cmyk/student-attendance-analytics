@@ -15,7 +15,8 @@ def init_database():
         port=Config.DB_PORT,
         user=Config.DB_USER,
         password=Config.DB_PASSWORD,
-        charset='utf8mb4'
+        charset='utf8mb4',
+ssl={}
     )
     
     with root_conn.cursor() as cur:
@@ -30,7 +31,8 @@ def init_database():
         user=Config.DB_USER,
         password=Config.DB_PASSWORD,
         database=Config.DB_NAME,
-        charset='utf8mb4'
+        charset='utf8mb4',
+ssl={}
     )
 
     with open('schema.sql', 'r', encoding='utf-8') as f:
