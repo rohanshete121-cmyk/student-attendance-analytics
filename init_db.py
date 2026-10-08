@@ -9,21 +9,9 @@ def init_database():
     """
     print(f"Connecting to MySQL server at {Config.DB_HOST}:{Config.DB_PORT} as '{Config.DB_USER}'...")
 
-    # Step 1: Connect to server without database to create the database if missing
-    root_conn = pymysql.connect(
-        host=Config.DB_HOST,
-        port=Config.DB_PORT,
-        user=Config.DB_USER,
-        password=Config.DB_PASSWORD,
-        charset='utf8mb4',
-ssl={}
-    )
-    
-    with root_conn.cursor() as cur:
-        cur.execute(f"CREATE DATABASE IF NOT EXISTS `{Config.DB_NAME}` DEFAULT CHARACTER SET utf8mb4;")
-        print(f"[SUCCESS] Database '{Config.DB_NAME}' created or verified.")
-    root_conn.close()
-
+   # Step 1: Aiven already provides the database.
+# Connect directly to the configured database.
+print(f"Using database '{Config.DB_NAME}'...")
     # Step 2: Connect to the specific project database and execute schema.sql
     conn = pymysql.connect(
         host=Config.DB_HOST,
