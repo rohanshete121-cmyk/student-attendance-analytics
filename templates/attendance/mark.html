@@ -1,1 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}Mark Attendance - Attendance Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h3 class="fw-bold mb-1">
+            <i class="bi bi-calendar-check-fill text-primary me-2"></i>Mark Daily Attendance
+        </h3>
+        <p class="text-muted mb-0">Record and submit student attendance for your classes</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('attendance_history') }}" class="btn btn-outline-primary shadow-sm">
+            <i class="bi bi-clock-history me-1"></i> View Attendance History
+        </a>
+    </div>
+</div>
+
+<!-- Class, Subject & Date Selection Form -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white py-3 border-bottom">
+        <h6 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-1-circle-fill text-primary me-2"></i>Step 1: Select Subject & Date
+        </h6>
+    </div>
+    <div class="card-body p-3 p-md-4">
+        <form method="GET" action="{{ url_for('attendance_mark') }}" class="row g-3 align-items-end">
+            <!-- Subject Dropdown -->
+            <div class="col-md-5">
+                <label for="subject_id" class="form-label fw-semibold">Subject <span class="text-danger">*</span></label>
+                <select name="subject_id" id="subject_id" class="form-select" required onchange="this.form.submit()">
+                    <option value="">-- Choose Subject --</option>
+                    {% for sub in teacher_subjects %}
+                        <option value="{{ sub.id }}" {{ 'selected' if selected_subject and selected_subject.id == sub.id else '' }}>
+                            {{ sub.subject_code }} - {{ sub.subject_name }} ({{ sub.class_name }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Date Picker -->
+            <div class="col-md-4">
+                <label for="attendance_date" class="form-label fw-semibold">Attendance Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" id="attendance_date" name="attendance_date" 
+                       value="{{ selected_date }}" max="{{ today_date }}" required onchange="this.form.submit()">
+            </div>
+
+            <!-- Action Button -->
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100 py-2">
+                    <i class="bi bi-people-fill me-1"></i> Load Students
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if selected_subject %}
+    {% if is_already_marked and not is_edit_mode %}
+        <!-- Already Marked Warning Banner with Update Option -->
+        <div class="alert alert-warning border-warning shadow-sm mb-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-shield-exclamation fs-3 text-warning"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark">Attendance Already Submitted</h6>
+                        <span class="small text-muted">
+                            Attendance for <strong>{{ selected_subject.subject_name }}</strong> on <strong>{{ selected_date }}</strong> is already recorded. 
+                            Duplicate entries are blocked.
+                        </span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('attendance_mark', subject_id=selected_subject.id, attendance_date=selected_date, edit=1) }}" class="btn btn-warning btn-sm fw-semibold">
+                        <i class="bi bi-pencil-square me-1"></i> Edit / Correct Attendance
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% elif is_already_marked and is_edit_mode %}
+        <div class="alert alert-info border-info shadow-sm mb-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-pencil-fill fs-4 text-info"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark">Attendance Correction Mode</h6>
+                        <span class="small text-muted">You are editing recorded attendance for <strong>{{ selected_subject.subject_name }}</strong> on <strong>{{ selected_date }}</strong>.</span>
+                    </div>
+                </div>
+                <a href="{{ url_for('attendance_mark', subject_id=selected_subject.id, attendance_date=selected_date) }}" class="btn btn-outline-secondary btn-sm">
+                    Cancel Editing
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Student Attendance Roster Table -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <span class="fw-bold text-dark">
+                    <i class="bi bi-mortarboard-fill text-primary me-1"></i> Class: <strong>{{ selected_subject.class_name }}</strong> &bull; 
+                    Students: <span class="badge bg-primary-subtle text-primary">{{ students|length }}</span>
+                </span>
+            </div>
+
+            {% if (not is_already_marked or is_edit_mode) and students %}
+            <!-- Fast Batch Selection Controls -->
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-success" onclick="markAll('Present')">
+                    <i class="bi bi-check-all me-1"></i> All Present
+                </button>
+                <button type="button" class="btn btn-outline-danger" onclick="markAll('Absent')">
+                    <i class="bi bi-x-circle me-1"></i> All Absent
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card-body p-0">
+            {% if students %}
+            <form method="POST" action="{{ url_for('attendance_update') if is_edit_mode else url_for('attendance_save') }}">
+                <input type="hidden" name="subject_id" value="{{ selected_subject.id }}">
+                <input type="hidden" name="attendance_date" value="{{ selected_date }}">
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">#</th>
+                                <th>Roll Number</th>
+                                <th>Student Name</th>
+                                <th>Class</th>
+                                <th class="text-center" style="width: 240px;">Attendance Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                            <tr>
+                                <td class="ps-4 text-muted">{{ loop.index }}</td>
+                                <td>
+                                    <span class="badge bg-secondary-subtle text-secondary fw-bold">
+                                        {{ student.roll_number }}
+                                    </span>
+                                </td>
+                                <td class="fw-semibold text-dark">{{ student.name }}</td>
+                                <td><span class="badge bg-info-subtle text-info-emphasis">{{ student.class_name }}</span></td>
+                                <td class="text-center">
+                                    {% if is_already_marked and not is_edit_mode %}
+                                        {% if existing_records.get(student.id) == 'Present' %}
+                                            <span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle me-1"></i>Present</span>
+                                        {% else %}
+                                            <span class="badge bg-danger px-3 py-2"><i class="bi bi-x-circle me-1"></i>Absent</span>
+                                        {% endif %}
+                                    {% else %}
+                                        {% set current_status = existing_records.get(student.id, 'Present') %}
+                                        <div class="btn-group w-100" role="group">
+                                            <input type="radio" class="btn-check status-present" name="status_{{ student.id }}" 
+                                                   id="present_{{ student.id }}" value="Present" {{ 'checked' if current_status == 'Present' else '' }}>
+                                            <label class="btn btn-outline-success btn-sm py-1" for="present_{{ student.id }}">
+                                                <i class="bi bi-check-lg me-1"></i>Present
+                                            </label>
+
+                                            <input type="radio" class="btn-check status-absent" name="status_{{ student.id }}" 
+                                                   id="absent_{{ student.id }}" value="Absent" {{ 'checked' if current_status == 'Absent' else '' }}>
+                                            <label class="btn btn-outline-danger btn-sm py-1" for="absent_{{ student.id }}">
+                                                <i class="bi bi-x-lg me-1"></i>Absent
+                                            </label>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if not is_already_marked or is_edit_mode %}
+                <div class="p-3 bg-light border-top d-flex justify-content-end gap-2">
+                    <button type="submit" class="btn {{ 'btn-warning text-dark' if is_edit_mode else 'btn-success text-white' }} px-4 py-2 shadow-sm fw-semibold">
+                        <i class="bi bi-save me-1"></i> {{ 'Update Attendance Record' if is_edit_mode else 'Submit & Save Attendance' }}
+                    </button>
+                </div>
+                {% endif %}
+            </form>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-person-x fs-1 text-secondary mb-2 d-block"></i>
+                <h6>No Students Found in Class {{ selected_subject.class_name }}</h6>
+                <p class="small text-muted mb-3">Please add students to this class in Student Management first.</p>
+                <a href="{{ url_for('students_add') }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i> Add Student to {{ selected_subject.class_name }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{% else %}
+    <!-- Initial Prompt to Pick Subject -->
+    <div class="card border-0 shadow-sm rounded-3 text-center py-5 text-muted">
+        <div class="card-body">
+            <i class="bi bi-arrow-up-circle fs-1 text-primary mb-2 d-block"></i>
+            <h5>Select a Subject and Date Above</h5>
+            <p class="small text-muted">Choose your course and lecture date from Step 1 to load the student attendance sheet.</p>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function markAll(status) {
+    if (status === 'Present') {
+        document.querySelectorAll('.status-present').forEach(el => el.checked = true);
+    } else if (status === 'Absent') {
+        document.querySelectorAll('.status-absent').forEach(el => el.checked = true);
+    }
+}
+</script>
+{% endblock %}
 
