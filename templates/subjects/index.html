@@ -1,1 +1,80 @@
+{% extends 'base.html' %}
 
+{% block title %}Subject Management - Attendance Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h3 class="fw-bold mb-1">
+            <i class="bi bi-book-half text-primary me-2"></i>Subject Management
+        </h3>
+        <p class="text-muted mb-0">Manage courses and classes assigned to your teaching profile</p>
+    </div>
+    <a href="{{ url_for('subjects_add') }}" class="btn btn-primary-custom text-white shadow-sm">
+        <i class="bi bi-plus-circle-fill me-1"></i> Add New Subject
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-dark">
+            <i class="bi bi-journals me-1 text-primary"></i> Your Assigned Subjects: 
+            <span class="badge bg-primary-subtle text-primary">{{ subjects|length }}</span>
+        </span>
+        <span class="text-muted small">Teacher: <strong>{{ session.get('teacher_name') }}</strong></span>
+    </div>
+    <div class="card-body p-0">
+        {% if subjects %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">#</th>
+                        <th>Subject Code</th>
+                        <th>Subject Name</th>
+                        <th>Class / Batch</th>
+                        <th>Assigned Teacher</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in subjects %}
+                    <tr>
+                        <td class="ps-4 text-muted">{{ loop.index }}</td>
+                        <td>
+                            <span class="badge bg-secondary-subtle text-secondary fw-bold px-2 py-1">
+                                {{ sub.subject_code }}
+                            </span>
+                        </td>
+                        <td class="fw-semibold text-dark">{{ sub.subject_name }}</td>
+                        <td>
+                            <span class="badge bg-info-subtle text-info-emphasis">{{ sub.class_name }}</span>
+                        </td>
+                        <td>
+                            <span class="text-dark small">
+                                <i class="bi bi-person-check me-1 text-success"></i>{{ session.get('teacher_name') }}
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <a href="{{ url_for('attendance_mark', subject_id=sub.id) }}" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-calendar-check me-1"></i> Mark Attendance
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-journal-x fs-1 text-secondary mb-2 d-block"></i>
+            <h5>No Subjects Assigned Yet</h5>
+            <p class="small text-muted mb-3">Add your first subject to start taking student attendance.</p>
+            <a href="{{ url_for('subjects_add') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> Add New Subject
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
