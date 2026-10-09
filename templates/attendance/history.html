@@ -1,1 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance History - Attendance Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h3 class="fw-bold mb-1">
+            <i class="bi bi-clock-history text-primary me-2"></i>Attendance History
+        </h3>
+        <p class="text-muted mb-0">Review past recorded attendance sessions</p>
+    </div>
+    <a href="{{ url_for('attendance_mark') }}" class="btn btn-primary-custom text-white shadow-sm">
+        <i class="bi bi-calendar-plus me-1"></i> Mark Today's Attendance
+    </a>
+</div>
+
+<!-- History Log Table -->
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-dark">
+            <i class="bi bi-journal-text me-1 text-primary"></i> Attendance Sessions Recorded: 
+            <span class="badge bg-primary-subtle text-primary">{{ sessions|length }}</span>
+        </span>
+    </div>
+    <div class="card-body p-0">
+        {% if sessions %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">#</th>
+                        <th>Lecture Date</th>
+                        <th>Subject Code</th>
+                        <th>Subject Name</th>
+                        <th>Class</th>
+                        <th class="text-center">Total Students</th>
+                        <th class="text-center">Present</th>
+                        <th class="text-center">Absent</th>
+                        <th class="text-end pe-4">Attendance %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sessions %}
+                    <tr>
+                        <td class="ps-4 text-muted">{{ loop.index }}</td>
+                        <td class="fw-semibold text-dark">{{ s.attendance_date }}</td>
+                        <td><span class="badge bg-secondary-subtle text-secondary">{{ s.subject_code }}</span></td>
+                        <td>{{ s.subject_name }}</td>
+                        <td><span class="badge bg-info-subtle text-info-emphasis">{{ s.class_name }}</span></td>
+                        <td class="text-center">{{ s.total_marked }}</td>
+                        <td class="text-center text-success fw-bold">{{ s.present_count }}</td>
+                        <td class="text-center text-danger fw-bold">{{ s.absent_count }}</td>
+                        <td class="text-end pe-4">
+                            {% set pct = (s.present_count / s.total_marked * 100)|round(1) if s.total_marked > 0 else 0 %}
+                            <span class="badge {{ 'bg-success' if pct >= 75 else 'bg-danger' }} px-2 py-1">
+                                {{ pct }}%
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-clipboard-x fs-1 text-secondary mb-2 d-block"></i>
+            <h5>No Attendance Sessions Recorded Yet</h5>
+            <p class="small text-muted mb-3">Start by marking attendance for your students.</p>
+            <a href="{{ url_for('attendance_mark') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> Mark Attendance
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
 
